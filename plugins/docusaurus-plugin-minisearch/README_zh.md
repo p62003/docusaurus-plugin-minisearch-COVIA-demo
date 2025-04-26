@@ -15,14 +15,23 @@ Covia MiniSearch Plugin 是一個為 Docusaurus 小型至中型知識庫網站�
 > 
 > 若有大型、多語言或中文搜尋優化等進階需求，建議改用如 `@easyops-cn/docusaurus-search-local` 等其他解決方案。
 
-## 🌟 Live Demo / 線上展示
 
-您可以在此查看本插件的線上示範網站：  
-🔗 [https://p62003.github.io/docusaurus-plugin-minisearch-COVIA-demo/docs/](https://p62003.github.io/docusaurus-plugin-minisearch-COVIA-demo/docs/)
 
-🌐 Available Languages:
+**🌟 Live Demo / 線上展示**
+- 您可以在此查看本插件的線上示範網站：  
+- 🔗 [https://p62003.github.io/docusaurus-plugin-minisearch-COVIA-demo/docs/](https://p62003.github.io/docusaurus-plugin-minisearch-COVIA-demo/docs/)
+
+
+**🌟 Plugin Repository**
+- 如果您想查看插件原始碼，請前往：  
+- 🔗 [covia-docusaurus-minisearch-plugin](https://github.com/p62003/covia-docusaurus-minisearch-plugin)
+
+
+**🌐 Available Languages:**
 - [English (Default)](README.md)
 - [繁體中文 (Traditional Chinese)](README_zh.md)
+
+
 
 ## 檔案結構
 

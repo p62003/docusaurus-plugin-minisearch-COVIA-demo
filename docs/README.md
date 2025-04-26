@@ -15,14 +15,21 @@ This plugin runs entirely on the frontend without requiring additional backend s
 > 
 > For advanced needs such as large-scale, multilingual, or Chinese-optimized search, please consider alternatives like `@easyops-cn/docusaurus-search-local`.
 
-## 🌟 Live Demo
 
-You can view a working demo of this plugin here:  
-🔗 [https://p62003.github.io/docusaurus-plugin-minisearch-COVIA-demo/docs/](https://p62003.github.io/docusaurus-plugin-minisearch-COVIA-demo/docs/)
+**🌟 Live Demo**
+- You can view a working demo of this plugin here:  
+- 🔗 [https://p62003.github.io/docusaurus-plugin-minisearch-COVIA-demo/docs/](https://p62003.github.io/docusaurus-plugin-minisearch-COVIA-demo/docs/)
 
-🌐 Available Languages:
+
+**🌟 Plugin Repository**
+- If you are looking for the source code of the plugin itself, please visit:  
+- 🔗 [covia-docusaurus-minisearch-plugin](https://github.com/p62003/covia-docusaurus-minisearch-plugin)
+
+
+**🌐 Available Languages:**
 - [English (Default)](README.md)
 - [繁體中文 (Traditional Chinese)](README_zh.md)
+
 
 ## File Structure
 
