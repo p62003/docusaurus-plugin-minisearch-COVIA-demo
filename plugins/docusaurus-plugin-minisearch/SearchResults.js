@@ -39,15 +39,72 @@ export default function SearchResults() {
         });
         return result;
     };
-    // 添加一個輔助函數來修復 URL
+
+    // 通用 URL 修復函數，增強版
     const fixDocUrl = (url) => {
+        // 獲取當前環境的基礎路徑
+        const getBasePath = () => {
+            // 嘗試從 Docusaurus meta 標籤獲取
+            const metaBaseUrl = document.querySelector('meta[name="docusaurus-base-url"]')?.getAttribute('content');
+            if (metaBaseUrl) {
+                return metaBaseUrl.endsWith('/') ? metaBaseUrl : metaBaseUrl + '/';
+            }
+
+            // 檢查當前 URL 路徑
+            const currentPath = window.location.pathname;
+
+            // 檢查是否在本地開發環境
+            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                // 檢查本地環境是否有特定路徑前綴
+                const matches = currentPath.match(/^(\/[^\/]+)\//);
+                if (matches && matches[1] !== '/search-results') {
+                    console.log('本地環境檢測到路徑前綴:', matches[1]);
+                    return matches[1] + '/';
+                }
+            }
+
+            // 檢查是否包含 docusaurus-plugin-minisearch-COVIA-demo
+            if (currentPath.includes('/docusaurus-plugin-minisearch-COVIA-demo/')) {
+                return '/docusaurus-plugin-minisearch-COVIA-demo/';
+            }
+
+            // 嘗試從搜尋結果頁面 URL 獲取
+            const searchResultsIndex = currentPath.indexOf('/search-results');
+            if (searchResultsIndex > 0) {
+                return currentPath.substring(0, searchResultsIndex) + '/';
+            }
+
+            // 嘗試從文檔鏈接推斷
+            const docsMatch = document.querySelector('a[href*="/docs/"]');
+            if (docsMatch) {
+                const href = docsMatch.getAttribute('href');
+                const docsIndex = href.indexOf('/docs/');
+                if (docsIndex > 0) {
+                    return href.substring(0, docsIndex) + '/';
+                }
+            }
+
+            // 默認返回根路徑
+            return '/';
+        };
+
+        const basePath = getBasePath();
+        console.log('檢測到的基礎路徑:', basePath, '原始 URL:', url);
+
         // 處理 README.md 特殊情況
         if (url.endsWith('/README')) {
-            return url.substring(0, url.length - '/README'.length) || '/docs';
+            url = url.substring(0, url.length - '/README'.length) || '/docs';
         }
+
+        // 確保 URL 包含正確的基礎路徑
+        if (url.startsWith('/') && !url.startsWith(basePath)) {
+            // 移除開頭的斜線，然後加上基礎路徑
+            url = basePath + url.substring(1);
+            console.log('修正後的 URL:', url);
+        }
+
         return url;
     };
-
     useEffect(() => {
         async function searchDocs() {
             if (!query) return;
@@ -56,83 +113,47 @@ export default function SearchResults() {
             try {
                 console.log('開始執行搜尋...');
 
-                // 獲取基礎 URL 的多種方法
-                let baseUrl;
+                // 嘗試多種索引路徑
+                const possiblePaths = [
+                    // 原始路徑
+                    indexPath,
+                    // 相對路徑
+                    './search-index.json',
+                    // 絕對路徑
+                    '/search-index.json',
+                    // 基於當前站點的路徑
+                    window.location.pathname.split('/search-results')[0] + '/search-index.json',
+                    // Docusaurus 文檔特定路徑
+                    '/docusaurus-plugin-minisearch-COVIA-demo/search-index.json'
+                ];
 
-                // 方法1: 從 Docusaurus meta 標籤獲取
-                const metaBaseUrl = document.querySelector('meta[name="docusaurus-base-url"]')?.getAttribute('content');
-                if (metaBaseUrl) {
-                    baseUrl = metaBaseUrl;
-                    console.log('從 meta 標籤獲取 baseUrl:', baseUrl);
-                }
-                // 方法2: 從當前頁面 URL 路徑獲取
-                else {
-                    // 從當前頁面 URL 提取基礎路徑
-                    // 例如: 如果頁面是 https://example.com/my-site/docs/intro，
-                    // 我們需要獲取 /my-site/ 作為基礎路徑
-                    const pathSegments = window.location.pathname.split('/');
-                    // 檢查是否存在 search-results 路徑段
-                    const searchResultsIndex = pathSegments.indexOf('search-results');
-                    if (searchResultsIndex > 0) {
-                        // 基礎路徑是搜索結果路徑前的所有段
-                        baseUrl = '/' + pathSegments.slice(1, searchResultsIndex).join('/') + '/';
-                    } else {
-                        // 默認使用根路徑
-                        baseUrl = '/';
-                    }
-                    console.log('從 URL 路徑獲取 baseUrl:', baseUrl);
-                }
+                // 去除重複路徑
+                const uniquePaths = [...new Set(possiblePaths)];
+                console.log('將嘗試以下路徑:', uniquePaths);
 
-                // 正確組合基礎URL和索引路徑
-                const normalizedBaseUrl = baseUrl.endsWith('/') ? baseUrl : baseUrl + '/';
-                const normalizedIndexPath = indexPath.startsWith('/') ? indexPath.substring(1) : indexPath;
-                const fullIndexPath = normalizedBaseUrl + normalizedIndexPath;
+                let success = false;
+                let lastError = null;
 
-                console.log(`使用索引路徑: ${fullIndexPath}`);
-
-                // 先嘗試相對路徑
-                try {
-                    console.log('嘗試使用完整路徑獲取索引');
-                    const res = await fetch(fullIndexPath);
-
-                    if (!res.ok) {
-                        throw new Error(`HTTP 錯誤: ${res.status}`);
-                    }
-
-                    const text = await res.text();
-                    console.log(`成功獲取索引內容，前 50 個字符: ${text.slice(0, 50)}`);
-
-                    const miniSearch = MiniSearch.loadJSON(text, {
-                        fields: searchFields,
-                        storeFields: resultFields,
-                    });
-
-                    console.log(`使用關鍵詞 "${query}" 執行搜尋`);
-                    const hits = miniSearch.search(query, {
-                        prefix: true,
-                        boost: { title: 2 },
-                        fuzzy: 0.2
-                    });
-
-                    console.log(`找到 ${hits.length} 個結果`);
-                    setResults(hits.slice(0, maxResults));
-
-                } catch (firstErr) {
-                    console.warn('使用完整路徑獲取索引失敗，嘗試備用方法:', firstErr);
-
-                    // 備用方法: 嘗試直接使用相對路徑
+                // 依次嘗試所有可能的路徑
+                for (const path of uniquePaths) {
                     try {
-                        const fallbackPath = './search-index.json';
-                        console.log(`嘗試備用路徑: ${fallbackPath}`);
-
-                        const res = await fetch(fallbackPath);
+                        console.log(`嘗試路徑: ${path}`);
+                        const res = await fetch(path);
 
                         if (!res.ok) {
-                            throw new Error(`HTTP 錯誤: ${res.status}`);
+                            console.log(`路徑 ${path} 返回狀態: ${res.status}`);
+                            continue; // 嘗試下一個路徑
                         }
 
                         const text = await res.text();
-                        console.log(`成功獲取索引內容，前 50 個字符: ${text.slice(0, 50)}`);
+
+                        // 確認是 JSON 而不是 HTML
+                        if (text.trim().startsWith('<!DOCTYPE') || text.trim().startsWith('<html')) {
+                            console.log(`路徑 ${path} 返回 HTML 而非 JSON`);
+                            continue;
+                        }
+
+                        console.log(`成功從 ${path} 獲取索引內容`);
 
                         const miniSearch = MiniSearch.loadJSON(text, {
                             fields: searchFields,
@@ -148,12 +169,22 @@ export default function SearchResults() {
 
                         console.log(`找到 ${hits.length} 個結果`);
                         setResults(hits.slice(0, maxResults));
+                        success = true;
+                        break; // 成功獲取索引，跳出循環
 
-                    } catch (secondErr) {
-                        console.error('所有嘗試都失敗:', secondErr);
-                        setError('無法載入搜尋索引。請檢查網路連接或聯繫網站管理員。');
+                    } catch (err) {
+                        console.warn(`路徑 ${path} 獲取失敗:`, err);
+                        lastError = err;
                     }
                 }
+
+                if (!success) {
+                    console.error('所有路徑都失敗');
+                    throw lastError || new Error('無法載入搜尋索引');
+                }
+            } catch (err) {
+                console.error('搜尋出錯:', err);
+                setError('無法載入搜尋索引。請確保 search-index.json 文件已正確生成並放置在適當位置。');
             } finally {
                 setLoading(false);
             }

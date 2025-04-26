@@ -76,8 +76,9 @@ const config = {
     [
       './plugins/docusaurus-plugin-minisearch',
       {
-        // 配置選項
-        highlightColor: '#ffeb3b',
+        // 修改索引路徑，確保包含 baseUrl
+        indexPath: '/docusaurus-plugin-minisearch-COVIA-demo/search-index.json',
+        // 其他配置保持不變
         searchResultPath: '/search-results',
         searchFields: ['title', 'content'],
         resultFields: ['title', 'url', 'excerpt'],
