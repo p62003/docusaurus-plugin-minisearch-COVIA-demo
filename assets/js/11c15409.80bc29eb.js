@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkcovia_plugin_demo=self.webpackChunkcovia_plugin_demo||[]).push([[7203],{3129:e=>{e.exports=JSON.parse('{"name":"docusaurus-plugin-minisearch","id":"default"}')}}]);
