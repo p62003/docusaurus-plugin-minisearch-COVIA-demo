@@ -70,6 +70,7 @@ const config = {
       }),
     ],
   ],
+  trailingSlash: true, // 或 false，視情況而定，但設置一個明確的值
 
   plugins: [
     [

@@ -38,7 +38,20 @@ function pluginMiniSearch(context, options) {
                 outputPath: indexOutputPath,
             });
 
-            // 拷貝到 static 目錄
+            // 拷貝到 static 目錄,拷貝到多個位置，增加兼容性
+            const staticPaths = [
+                path.join(siteDir, 'static', 'search-index.json'),
+                path.join(siteDir, 'static', indexPath.replace(/^\//, '')),
+                // 確保也有不帶前置斜線的版本
+                path.join(siteDir, 'build', 'search-index.json')
+            ];
+
+            staticPaths.forEach(staticPath => {
+                fs.mkdirSync(path.dirname(staticPath), { recursive: true });
+                fs.copyFileSync(indexOutputPath, staticPath);
+                console.log(`✅ search-index.json 已複製到 ${staticPath} 成功`);
+            });
+
             const staticPath = path.join(siteDir, 'static', 'search-index.json');
             fs.mkdirSync(path.dirname(staticPath), { recursive: true });
             fs.copyFileSync(indexOutputPath, staticPath);

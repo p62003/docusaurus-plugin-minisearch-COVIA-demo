@@ -1,1 +1,0 @@
-"use strict";(self.webpackChunkcovia_plugin_demo=self.webpackChunkcovia_plugin_demo||[]).push([[7949],{3616:e=>{e.exports=JSON.parse('{"metadata":{"permalink":"/docusaurus-plugin-minisearch-COVIA-demo/blog","page":1,"postsPerPage":10,"totalPages":1,"totalCount":4,"blogDescription":"Blog","blogTitle":"Blog"}}')}}]);
