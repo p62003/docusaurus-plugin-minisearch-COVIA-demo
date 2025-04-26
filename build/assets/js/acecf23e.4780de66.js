@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkcovia_plugin_demo=self.webpackChunkcovia_plugin_demo||[]).push([[1903],{1912:s=>{s.exports=JSON.parse('{"blogBasePath":"/docusaurus-plugin-minisearch-COVIA-demo/blog","blogTitle":"Blog","authorsListPath":"/docusaurus-plugin-minisearch-COVIA-demo/blog/authors"}')}}]);
