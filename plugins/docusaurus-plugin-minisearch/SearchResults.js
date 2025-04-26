@@ -49,53 +49,61 @@ export default function SearchResults() {
     };
 
     useEffect(() => {
-        async function searchDocs() {
-            if (!query) return;
-
-            setLoading(true);
-            setError(null);
-
+    async function searchDocs() {
+        if (!query) return;
+        setLoading(true);
+        setError(null);
+        try {
+            console.log('開始執行搜尋...');
+            
+            // 構建正確的索引路徑
+            // 從 meta 標籤獲取 baseUrl 或使用默認路徑
+            const siteBaseUrl = document.querySelector('meta[name="docusaurus-base-url"]')?.getAttribute('content') || '/';
+            // 處理路徑組合，確保沒有重複的斜線
+            const fullIndexPath = siteBaseUrl.endsWith('/') 
+                ? `${siteBaseUrl}${indexPath.replace(/^\//, '')}` 
+                : `${siteBaseUrl}/${indexPath.replace(/^\//, '')}`;
+            
+            console.log(`使用索引路徑: ${fullIndexPath}`);
+            
             try {
-                console.log('開始執行搜尋...');
-                console.log(`使用索引路徑: ${indexPath}`);
-
-                // 直接從檔案加載索引
-                try {
-                    // 嘗試從靜態資源目錄載入索引
-                    const res = await fetch(indexPath);
-
-                    if (!res.ok) {
-                        throw new Error(`HTTP 錯誤: ${res.status}`);
-                    }
-
-                    // 獲取索引 JSON 文本
-                    const text = await res.text();
-                    console.log(`成功獲取索引內容，前 50 個字符: ${text.slice(0, 50)}`);
-
-                    // 直接將文本傳給 loadJSON，不先解析
-                    const miniSearch = MiniSearch.loadJSON(text, {
-                        fields: searchFields,
-                        storeFields: resultFields,
-                    });
-
-                    // 執行搜尋
-                    console.log(`使用關鍵詞 "${query}" 執行搜尋`);
-                    const hits = miniSearch.search(query, {
-                        prefix: true,
-                        boost: { title: 2 },
-                        fuzzy: 0.2
-                    });
-
-                    console.log(`找到 ${hits.length} 個結果`);
-                    setResults(hits.slice(0, maxResults));
-                } catch (err) {
-                    console.error('搜尋出錯:', err);
-                    setError(err.message);
+                // 使用構建的完整路徑
+                const res = await fetch(fullIndexPath);
+                
+                if (!res.ok) {
+                    throw new Error(`HTTP 錯誤: ${res.status}`);
                 }
-            } finally {
-                setLoading(false);
+                
+                // 以下代碼保持不變
+                const text = await res.text();
+                console.log(`成功獲取索引內容，前 50 個字符: ${text.slice(0, 50)}`);
+                
+                const miniSearch = MiniSearch.loadJSON(text, {
+                    fields: searchFields,
+                    storeFields: resultFields,
+                });
+                
+                console.log(`使用關鍵詞 "${query}" 執行搜尋`);
+                const hits = miniSearch.search(query, {
+                    prefix: true,
+                    boost: { title: 2 },
+                    fuzzy: 0.2
+                });
+                
+                console.log(`找到 ${hits.length} 個結果`);
+                setResults(hits.slice(0, maxResults));
+                
+            } catch (err) {
+                console.error('搜尋出錯:', err);
+                setError(err.message);
             }
+        } finally {
+            setLoading(false);
         }
+    }
+
+    searchDocs();
+}, [query, indexPath, searchFields, resultFields, maxResults]);
 
         searchDocs();
     }, [query, indexPath, searchFields, resultFields, maxResults]);
