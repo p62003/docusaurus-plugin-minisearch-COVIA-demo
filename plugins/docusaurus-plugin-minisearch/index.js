@@ -103,7 +103,7 @@ function pluginMiniSearch(context, options) {
             };
         },
 
-        // 在客戶端注入變量
+        // 在客戶端注入變量和全局樣式
         injectHtmlTags() {
             return {
                 headTags: [
@@ -112,6 +112,24 @@ function pluginMiniSearch(context, options) {
                         innerHTML: `
                             :root {
                                 --search-highlight-color: ${highlightColor};
+                            }
+                            
+                            /* 全局高亮樣式，確保最高優先級 */
+                            .search-highlight,
+                            span[style*="background-color:${highlightColor}"],
+                            mark[style*="background-color:${highlightColor}"] {
+                                background-color: ${highlightColor} !important;
+                                color: #000 !important;
+                                padding: 0 2px !important;
+                                border-radius: 2px !important;
+                                font-weight: bold !important;
+                                display: inline !important;
+                            }
+                            
+                            /* 確保 dangerouslySetInnerHTML 中的 HTML 標籤正確顯示 */
+                            .resultExcerpt span,
+                            .resultExcerpt mark {
+                                display: inline !important;
                             }
                         `,
                     },

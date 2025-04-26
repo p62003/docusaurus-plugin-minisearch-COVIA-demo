@@ -76,13 +76,11 @@ const config = {
     [
       './plugins/docusaurus-plugin-minisearch',
       {
-        // 修改索引路徑，確保包含 baseUrl
         indexPath: '/docusaurus-plugin-minisearch-COVIA-demo/search-index.json',
-        // 其他配置保持不變
         searchResultPath: '/search-results',
         searchFields: ['title', 'content'],
         resultFields: ['title', 'url', 'excerpt'],
-        maxResults: 10
+        maxResults: 10,
       }
     ],
   ],

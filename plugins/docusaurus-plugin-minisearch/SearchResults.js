@@ -23,20 +23,131 @@ export default function SearchResults() {
         indexPath = '/search-index.json',
         searchFields = ['title', 'content'],
         resultFields = ['title', 'url', 'excerpt'],
-        maxResults = 10
+        maxResults = 10,
+        highlightColor = '#ffeb3b'
     } = searchConfig || {};
 
-    // 高亮搜尋關鍵字
-    const highlightMatches = (text, query) => {
-        if (!text || !query) return text;
-        const words = query.trim().split(/\s+/).filter(word => word.length > 1);
-        if (words.length === 0) return text;
+    // 高亮搜尋關鍵字 - 終極修復版 5.0
+    const highlightMatches = (text, query, originalQuery, forceHighlight = false) => {
+        if (!text || (!query && !originalQuery)) return text;
 
+        // 轉義正則表達式特殊字符
+        const escapeRegExp = (string) => {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        };
+
+        // 處理查詢詞 - 不過濾長度，允許匹配任何長度的詞
+        const words = query.trim().split(/\s+/).filter(word => word.length > 0);
+
+        // 添加原始查詢詞，確保部分匹配也能被高亮
+        const originalWords = originalQuery ? originalQuery.trim().split(/\s+/).filter(word => word.length > 0) : [];
+        const allWords = [...new Set([...words, ...originalWords])];
+
+        if (allWords.length === 0) return text;
+
+        // 使用最直接的方式，不進行HTML轉義
         let result = text;
-        words.forEach(word => {
-            const regex = new RegExp(`(${word})`, 'gi');
-            result = result.replace(regex, '<span class="' + styles.highlight + '">$1</span>');
+
+        // 添加調試信息
+        console.log('原始文本:', text);
+        console.log('搜尋詞:', allWords);
+
+        // 檢查文本中是否包含搜尋詞
+        let hasMatch = false;
+
+        // 先嘗試直接匹配原始查詢詞（可能是部分詞如"READ"）
+        originalWords.forEach(word => {
+            try {
+                if (text.toLowerCase().includes(word.toLowerCase())) {
+                    hasMatch = true;
+                    console.log(`找到原始詞匹配: "${word}"`);
+
+                    const escapedWord = escapeRegExp(word);
+                    // 使用不區分大小寫的正則表達式
+                    const regex = new RegExp(`(${escapedWord})`, 'gi');
+
+                    // 使用特定的類名和內聯樣式
+                    result = result.replace(regex, `<span class="search-highlight" style="background-color:${highlightColor} !important;color:#000 !important;padding:0 2px;border-radius:2px;font-weight:bold;">$1</span>`);
+                }
+            } catch (e) {
+                console.error('原始詞匹配錯誤:', e);
+            }
         });
+
+        // 然後嘗試匹配完整詞
+        if (!hasMatch) {
+            words.forEach(word => {
+                if (text.toLowerCase().includes(word.toLowerCase())) {
+                    hasMatch = true;
+                    console.log(`找到完整詞匹配: "${word}"`);
+
+                    const escapedWord = escapeRegExp(word);
+                    const regex = new RegExp(`(${escapedWord})`, 'gi');
+
+                    // 使用特定的類名和內聯樣式
+                    result = result.replace(regex, `<span class="search-highlight" style="background-color:${highlightColor} !important;color:#000 !important;padding:0 2px;border-radius:2px;font-weight:bold;">$1</span>`);
+                }
+            });
+        }
+
+        // 如果仍然沒有匹配，嘗試部分匹配
+        if (!hasMatch) {
+            console.log('沒有找到匹配項，嘗試部分匹配');
+
+            // 對所有詞進行部分匹配
+            allWords.forEach(word => {
+                try {
+                    const escapedWord = escapeRegExp(word);
+
+                    // 首先嘗試匹配包含該詞的單詞
+                    const containsRegex = new RegExp(`([^\\s]*${escapedWord}[^\\s]*)`, 'gi');
+                    const containsMatches = text.match(containsRegex);
+
+                    if (containsMatches && containsMatches.length > 0) {
+                        console.log(`找到包含匹配: ${containsMatches.join(', ')}`);
+
+                        // 使用特定的類名和內聯樣式
+                        result = result.replace(containsRegex, `<span class="search-highlight" style="background-color:${highlightColor} !important;color:#000 !important;padding:0 2px;border-radius:2px;font-weight:bold;">$1</span>`);
+                        hasMatch = true;
+                    }
+                    // 如果沒有找到包含匹配，嘗試匹配部分詞
+                    else if (word.length >= 3) {  // 只對長度>=3的詞進行部分匹配
+                        // 匹配任何包含該詞一部分的文本
+                        for (let i = 0; i < word.length - 2; i++) {
+                            const partialWord = word.substring(i, i + 3);  // 取3個字符的子串
+                            const partialEscaped = escapeRegExp(partialWord);
+                            const partialRegex = new RegExp(`(${partialEscaped})`, 'gi');
+
+                            if (text.toLowerCase().includes(partialWord.toLowerCase())) {
+                                console.log(`找到部分詞匹配: ${partialWord}`);
+
+                                // 使用特定的類名和內聯樣式
+                                result = result.replace(partialRegex, `<span class="search-highlight" style="background-color:${highlightColor} !important;color:#000 !important;padding:0 2px;border-radius:2px;font-weight:bold;">$1</span>`);
+                                hasMatch = true;
+                                break;  // 找到一個匹配就停止
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.error('部分匹配錯誤:', e);
+                }
+            });
+
+            // 如果強制高亮，且沒有找到匹配項，則高亮第一個單詞
+            if (forceHighlight && !hasMatch && text.length > 0) {
+                console.log('強制高亮第一個單詞');
+                const firstWord = text.split(/\s+/)[0];
+                if (firstWord && firstWord.length > 0) {
+                    result = result.replace(firstWord, `<span class="search-highlight" style="background-color:${highlightColor} !important;color:#000 !important;padding:0 2px;border-radius:2px;font-weight:bold;">${firstWord}</span>`);
+                    hasMatch = true;
+                }
+            }
+        }
+
+        // 添加調試信息
+        console.log('處理後文本:', result);
+        console.log('是否有匹配:', hasMatch);
+
         return result;
     };
 
@@ -168,7 +279,28 @@ export default function SearchResults() {
                         });
 
                         console.log(`找到 ${hits.length} 個結果`);
-                        setResults(hits.slice(0, maxResults));
+
+                        // 從搜尋結果中獲取匹配的詞
+                        const matchTerms = new Set();
+                        hits.forEach(hit => {
+                            if (hit.terms) {
+                                hit.terms.forEach(term => matchTerms.add(term));
+                            }
+                            // 如果沒有terms屬性，使用搜尋詞
+                            else {
+                                query.trim().split(/\s+/).forEach(term => matchTerms.add(term));
+                            }
+                        });
+
+                        console.log('匹配的詞:', Array.from(matchTerms));
+
+                        // 將匹配的詞添加到結果中
+                        const resultsWithTerms = hits.map(hit => ({
+                            ...hit,
+                            matchTerms: Array.from(matchTerms)
+                        }));
+
+                        setResults(resultsWithTerms.slice(0, maxResults));
                         success = true;
                         break; // 成功獲取索引，跳出循環
 
@@ -245,29 +377,51 @@ export default function SearchResults() {
             );
         }
 
+        // 添加調試信息
+        console.log('搜尋結果:', results);
+        console.log('搜尋詞:', query);
+
         return (
             <div className={styles.searchResults}>
                 <h2>搜尋結果: {query}</h2>
                 <p className={styles.resultCount}>共找到 {results.length} 個結果</p>
                 <ul className={styles.resultList}>
-                    {results.map((item, idx) => (
-                        <li key={idx} className={styles.resultItem}>
-                            <a href={fixDocUrl(item.url)} className={styles.resultTitle}>
-                                {item.title}
-                            </a>
-                            {item.excerpt && (
-                                <p
-                                    className={styles.resultExcerpt}
+                    {results.map((item, idx) => {
+                        // 使用匹配的詞來高亮文本
+                        const terms = item.matchTerms || query.trim().split(/\s+/);
+                        console.log(`結果 ${idx} 匹配的詞:`, terms);
+
+                        // 預處理高亮文本 - 使用匹配的詞和原始查詢詞，不強制高亮
+                        const highlightedExcerpt = item.excerpt ?
+                            highlightMatches(item.excerpt, terms.join(' '), query, false) : '';
+                        console.log(`結果 ${idx} 高亮後:`, highlightedExcerpt);
+
+                        // 預處理高亮標題，不強制高亮
+                        const highlightedTitle = highlightMatches(item.title, terms.join(' '), query, false);
+
+                        return (
+                            <li key={idx} className={styles.resultItem}>
+                                <a
+                                    href={fixDocUrl(item.url)}
+                                    className={styles.resultTitle}
                                     dangerouslySetInnerHTML={{
-                                        __html: highlightMatches(item.excerpt, query)
+                                        __html: highlightedTitle
                                     }}
                                 />
-                            )}
-                            <a href={fixDocUrl(item.url)} className={styles.resultLink}>
-                                查看文檔 →
-                            </a>
-                        </li>
-                    ))}
+                                {item.excerpt && (
+                                    <p
+                                        className={styles.resultExcerpt}
+                                        dangerouslySetInnerHTML={{
+                                            __html: highlightedExcerpt
+                                        }}
+                                    />
+                                )}
+                                <a href={fixDocUrl(item.url)} className={styles.resultLink}>
+                                    查看文檔 →
+                                </a>
+                            </li>
+                        );
+                    })}
                 </ul>
             </div>
         );
