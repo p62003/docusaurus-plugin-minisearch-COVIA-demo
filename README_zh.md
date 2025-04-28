@@ -19,7 +19,7 @@ Covia MiniSearch Plugin 是一個為 Docusaurus 小型至中型知識庫網站�
 
 **🌟 Live Demo / 線上展示**
 - 您可以在此查看本插件的線上示範網站：  
-- 🔗 [https://p62003.github.io/docusaurus-plugin-minisearch-COVIA-demo/docs/](https://p62003.github.io/docusaurus-plugin-minisearch-COVIA-demo/docs/)
+- 🔗 [https://p62003.github.io/docusaurus-plugin-minisearch-COVIA-demo/docs/](https://p62003.github.io/docusaurus-plugin-minisearch-COVIA-demo/)
 
 
 **🌟 Plugin Repository**
